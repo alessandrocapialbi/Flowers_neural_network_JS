@@ -6,66 +6,88 @@
 </head>
 <body>
 <script>
-    //training set. [length, width, color(0=blue and 1=red)]
+
+    //Training set. [length, width, color(0=blue and 1=red)]
+
     var dataB1 = [1, 1, 0];
-    var dataB2 = [2, 1,   0];
+    var dataB2 = [2, 1, 0];
     var dataB3 = [2, .5, 0];
-    var dataB4 = [3,   1, 0];
+    var dataB4 = [3, 1, 0];
 
     var dataR1 = [3, 1.5, 1];
-    var dataR2 = [3.5,   .5, 1];
+    var dataR2 = [3.5, .5, 1];
     var dataR3 = [4, 1.5, 1];
-    var dataR4 = [5.5,   1,   1];
+    var dataR4 = [5.5, 1, 1];
 
-    //unknown type (data we want to find)
-    var dataU = [4.5,  1, "it should be 1"];
+    // Unknown type (data we want to find)
+    var dataU = [4.5, 1, "it should be 1"];
+
+    // I put all the flowers data inside an array. It becomes an array inside another array.
 
     var all_points = [dataB1, dataB2, dataB3, dataB4, dataR1, dataR2, dataR3, dataR4];
 
+    // Function which let us choose values from 0 to 1. (0 == blue, 1 == red).
+
     function sigmoid(x) {
-        return 1/(1+Math.exp(-x));
+        return 1 / (1 + Math.exp(-x));
     }
 
-    // training
+    // Training the neural network.
+
     function train() {
-        let w1 = Math.random()*.2-.1;
-        let w2 = Math.random()*.2-.1;
-        let b = Math.random()*.2-.1;
-        let learning_rate = 0.2;
-        for (let iter = 0; iter < 50000; iter++) {
-            // pick a random point
-            let random_idx = Math.floor(Math.random() * all_points.length);
-            let point = all_points[random_idx];
-            let target = point[2]; // target stored in 3rd coord of points
 
-            // feed forward
-            let z = w1 * point[0] + w2 * point[1] + b;
-            let pred = sigmoid(z);
+        // Starting off with random values.
 
-            // now we compare the model prediction with the target
+        let w1 = Math.random() * .2 - .1; // Weight 1. Math.random() returns a value from 0 to 1.
+        let w2 = Math.random() * .2 - .1; //Weight 2.
+        let b = Math.random() * .2 - .1; //Bias
+        let learning_rate = 0.2; // Neural network's learning rate.
+
+        for (let iter = 0; iter < 50000; iter++) { // 50000 iterations to train the neural network.
+            // Pick a random point
+            let random_idx = Math.floor(Math.random() * all_points.length); /*Math.floor() rounds a number downwards
+            to the nearest integer.*/
+            let point = all_points[random_idx]; //It picks a flower's measurement.
+
+            let target = point[2]; // Target stored in 3rd coord of points. (Blue or Red, 0 or 1).
+
+            // Feed forward
+
+            let z = w1 * point[0] + w2 * point[1] + b; //This is the function that determines the output.
+            let pred = sigmoid(z); /*This is the first prediction of the neural network with random values
+            using sigmoid function.*/
+
+            /* Now we compare the model prediction with the target. This is the squared error cost function
+            which we have to minimize to get close to the real data.
+            */
+
             let cost = (pred - target) ** 2;
 
-            // now we find the slope of the cost w.r.t. each parameter (w1, w2, b)
-            // bring derivative through square function
-            let dcost_dpred = 2 * (pred - target);
+            // Now we find the slope of the cost w.r.t. each parameter (w1, w2, b)
+            // Bring derivative through square function
 
-            // bring derivative through sigmoid
-            // derivative of sigmoid can be written using more sigmoids! d/dz sigmoid(z) = sigmoid(z)*(1-sigmoid(z))
-            let dpred_dz = sigmoid(z) * (1-sigmoid(z));
+            let dcost_dpred = 2 * (pred - target); //Calculating the derivative using its properties.
+
+            // Bring derivative through sigmoid
+            // Derivative of sigmoid can be written using more sigmoids! d/dz sigmoid(z) = sigmoid(z)*(1-sigmoid(z))
+            let dpred_dz = sigmoid(z) * (1 - sigmoid(z));
 
             // I think you forgot these in your slope calculation?
+
             let dz_dw1 = point[0];
             let dz_dw2 = point[1];
             let dz_db = 1;
 
-            // now we can get the partial derivatives using the chain rule
-            // notice the pattern? We're bringing how the cost changes through each function, first through the square, then through the sigmoid
-            // and finally whatever is multiplying our parameter of interest becomes the last part
+            // Now we can get the partial derivatives using the chain rule.
+
+            /* Notice the pattern? We're bringing how the cost changes through each function, first through the square
+            then through the sigmoid and finally whatever is multiplying our parameter of interest becomes the last part.
+            */
             let dcost_dw1 = dcost_dpred * dpred_dz * dz_dw1;
             let dcost_dw2 = dcost_dpred * dpred_dz * dz_dw2;
-            let dcost_db =  dcost_dpred * dpred_dz * dz_db;
+            let dcost_db = dcost_dpred * dpred_dz * dz_db;
 
-            // now we update our parameters!
+            // Now we update our parameters!
             w1 -= learning_rate * dcost_dw1;
             w2 -= learning_rate * dcost_dw2;
             b -= learning_rate * dcost_db;
@@ -81,18 +103,19 @@
     let ctx = canvas.getContext("2d");
     ctx.font = "Helvetica";
 
-    // map points from graph coordinates to the screen
-    let graph_size = {width: 7, height: 7};
+    // Map points from graph coordinates to the screen
+
+    let graph_size = {width: 7, height: 7}; //7x7 graph size
     function to_screen(x, y) {
-        return {x: (x/graph_size.width)*canvas.width, y: -(y/graph_size.height)*canvas.height + canvas.height};
+        return {x: (x / graph_size.width) * canvas.width, y: -(y / graph_size.height) * canvas.height + canvas.height};
     }
 
-    // map points from screen coordinates to the graph
+    // Map points from screen coordinates to the graph
     function to_graph(x, y) {
-        return {x: x/canvas.width*graph_size.width, y: graph_size.height - y/canvas.height*graph_size.height};
+        return {x: x / canvas.width * graph_size.width, y: graph_size.height - y / canvas.height * graph_size.height};
     }
 
-    // draw the graph's grid lines
+    // Draw the graph's grid lines
     function draw_grid() {
         ctx.strokeStyle = "#AAAAAA";
         for (let j = 0; j <= graph_size.width; j++) {
@@ -179,22 +202,13 @@
         let mouse = {x: evt.offsetX, y: evt.offsetY};
         let mouse_graph = to_graph(mouse.x, mouse.y);
 
-        ctx.fillText("x: " + Math.round(mouse_graph.x*100)/100, p.x, p.y);
-        ctx.fillText("y: " + Math.round(mouse_graph.y*100)/100, p.x, p.y + 10);
+        ctx.fillText("x: " + Math.round(mouse_graph.x * 100) / 100, p.x, p.y);
+        ctx.fillText("y: " + Math.round(mouse_graph.y * 100) / 100, p.x, p.y + 10);
         // model output
-        let model_out = sigmoid( mouse_graph.x * params.w1 + mouse_graph.y * params.w2 + params.b );
-        model_out = Math.round(model_out*100)/100;
+        let model_out = sigmoid(mouse_graph.x * params.w1 + mouse_graph.y * params.w2 + params.b);
+        model_out = Math.round(model_out * 100) / 100;
         ctx.fillText("prediction: " + model_out, p.x, p.y + 20);
     }
-
-
-
-
-
-
-
 </script>
-
-
 </body>
 </html>
